@@ -1,4 +1,5 @@
 using System;
+using System.Runtime.CompilerServices;
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Configs;
 
@@ -73,6 +74,32 @@ namespace math_struct_benchmark
         }
     }
 
+    public struct Vector4_A_AggressiveInlining
+    {
+        public float X;
+        public float Y;
+        public float Z;
+        public float W;
+
+        public Vector4_A_AggressiveInlining(float x, float y, float z, float w)
+        {
+            X = x;
+            Y = y;
+            Z = z;
+            W = w;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Vector4_A_AggressiveInlining operator +(Vector4_A_AggressiveInlining value1, Vector4_A_AggressiveInlining value2)
+        {
+            return new Vector4_A_AggressiveInlining(
+                value1.X + value2.X,
+                value1.Y + value2.Y,
+                value1.Z + value2.Z,
+                value1.W + value2.W);
+        }
+    }
+
     public struct Vector4_B
     {
         public float X;
@@ -91,6 +118,33 @@ namespace math_struct_benchmark
         public static Vector4_B operator +(Vector4_B value1, Vector4_B value2)
         {
             Vector4_B result;
+            result.W = value1.W + value2.W;
+            result.X = value1.X + value2.X;
+            result.Y = value1.Y + value2.Y;
+            result.Z = value1.Z + value2.Z;
+            return result;
+        }
+    }
+
+    public struct Vector4_B_AggressiveInlining
+    {
+        public float X;
+        public float Y;
+        public float Z;
+        public float W;
+
+        public Vector4_B_AggressiveInlining(float x, float y, float z, float w)
+        {
+            X = x;
+            Y = y;
+            Z = z;
+            W = w;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Vector4_B_AggressiveInlining operator +(Vector4_B_AggressiveInlining value1, Vector4_B_AggressiveInlining value2)
+        {
+            Vector4_B_AggressiveInlining result;
             result.W = value1.W + value2.W;
             result.X = value1.X + value2.X;
             result.Y = value1.Y + value2.Y;
@@ -131,10 +185,36 @@ namespace math_struct_benchmark
         }
 
         [Benchmark]
+        public void Vector4_A_AggressiveInlining_Operator()
+        {
+            var a = new Vector4_A_AggressiveInlining(1, 2, 3, 4);
+            var b = new Vector4_A_AggressiveInlining(4, 5, 6, 7);
+
+            var iterations = Iterations;
+            while (iterations-- > 0)
+            {
+                a = a + b;
+            }
+        }
+
+        [Benchmark]
         public void Vector4_B_Operator()
         {
             var a = new Vector4_B(1, 2, 3, 4);
             var b = new Vector4_B(4, 5, 6, 7);
+
+            var iterations = Iterations;
+            while (iterations-- > 0)
+            {
+                a = a + b;
+            }
+        }
+
+        [Benchmark]
+        public void Vector4_B_AggressiveInlining_Operator()
+        {
+            var a = new Vector4_B_AggressiveInlining(1, 2, 3, 4);
+            var b = new Vector4_B_AggressiveInlining(4, 5, 6, 7);
 
             var iterations = Iterations;
             while (iterations-- > 0)
