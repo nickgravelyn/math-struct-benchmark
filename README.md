@@ -10,6 +10,7 @@ Run the benchmarks: `dotnet run -f netcoreapp2.2 -c Release -- -f "*"`
 - Approach A and B appear to have nearly identical results on .NET Framework and .NET Core, but approach B seems to be generally better on Mono.
 - That said both are faster than FNA's current implementation which requires a defensive copy of the input struct that is modified.
 - Across the board if raw performance is the goal then the `Add(ref, ref, out)` method is the right choice over the + operator.
+- AggressiveInlining seems to help only on Mono. It seems to help approach A only in Vector2 whereas approach B sees gains for all three vector sizes.
 
 
 ## Results on my PC
