@@ -7,8 +7,7 @@ Run the benchmarks: `dotnet run -f netcoreapp2.2 -c Release -- -f "*"`
 ## Takeaways (based on my results on my PC with these JITs/runtimes)
 
 - Vector2 is consistently slower than both Vector3 and Vector4 when using anything but the `Add(ref, ref, out)` static helper. I haven't dug into this to figure out why but it is a particularly interesting thing to note.
-- Approach A and B appear to have nearly identical results on .NET Framework and .NET Core, but approach B seems to be generally better on Mono.
-- That said both are faster than FNA's current implementation which requires a defensive copy of the input struct that is modified.
+- Approach A and B appear to have nearly identical results on .NET Framework and .NET Core, but approach B seems to be generally better on Mono with approach A generally running slower than FNA.
 - Across the board if raw performance is the goal then the `Add(ref, ref, out)` method is the right choice over the + operator.
 - AggressiveInlining seems to help only on Mono. It seems to help approach A only in Vector2 whereas approach B sees gains for all three vector sizes.
 
