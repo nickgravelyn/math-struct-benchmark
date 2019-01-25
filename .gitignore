@@ -2,3 +2,4 @@ obj/
 bin/
 .DS_Store
 Thumbs.db
+BenchmarkDotNet.Artifacts/
