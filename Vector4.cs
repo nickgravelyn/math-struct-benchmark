@@ -99,6 +99,7 @@ namespace math_struct_benchmark
         }
     }
 
+    [ClrJob, MonoJob, CoreJob]
     public class Vector4_Benchmarks
     {
         private const int Iterations = 100_000_000;

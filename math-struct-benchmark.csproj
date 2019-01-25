@@ -2,7 +2,8 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFrameworks>netcoreapp2.1;net46</TargetFrameworks>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <TargetFrameworks>netcoreapp2.2;net46</TargetFrameworks>
     <RootNamespace>math_struct_benchmark</RootNamespace>
   </PropertyGroup>
 
