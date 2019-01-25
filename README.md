@@ -2,9 +2,9 @@
 
 Benchmarking techniques for math structs in C# in service of data for https://github.com/FNA-XNA/FNA/issues/227
 
-Run it with `dotnet run -c Release -- -f "*"`.
+Run against .NET Core: `dotnet run -f netcoreapp2.1 -c Release -- -f "*" -r netcoreapp2.1`
 
-On Windows you can also run `dotnet run -f net46 -c Release -- -f "*" -r net46` to run against .NET Framework.
+Run against .NET Framework: `dotnet run -f net46 -c Release -- -f "*" -r net46`
 
 ## Takeaways
 
