@@ -117,7 +117,12 @@ namespace math_struct_benchmark
         }
     }
 
-    [ClrJob, MonoJob, CoreJob]
+    [ClrJob]
+    [CoreJob]
+    [LegacyJitX86Job]
+    [LegacyJitX64Job]
+    [MonoJob("MonoX64", @"C:\Program Files\Mono\bin\mono.exe")]
+    [MonoJob("MonoX86", @"C:\Program Files (x86)\Mono\bin\mono.exe")]
     public class Vector2_Benchmarks
     {
         private const int Iterations = 100_000_000;
