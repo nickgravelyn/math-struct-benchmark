@@ -210,6 +210,19 @@ namespace math_struct_benchmark
         }
 
         [Benchmark]
+        public void Numerics_Vector3_Operator()
+        {
+            var a = new System.Numerics.Vector3(1, 2, 3);
+            var b = new System.Numerics.Vector3(4, 5, 6);
+
+            var iterations = Iterations;
+            while (iterations-- > 0)
+            {
+                a = a + b;
+            }
+        }
+
+        [Benchmark]
         public void Vector3_Fna_Add()
         {
             var a = new Vector3_Fna(1, 2, 3);

@@ -227,6 +227,19 @@ namespace math_struct_benchmark
         }
 
         [Benchmark]
+        public void Numerics_Vector4_Operator()
+        {
+            var a = new System.Numerics.Vector4(1, 2, 3, 4);
+            var b = new System.Numerics.Vector4(4, 5, 6, 7);
+
+            var iterations = Iterations;
+            while (iterations-- > 0)
+            {
+                a = a + b;
+            }
+        }
+
+        [Benchmark]
         public void Vector4_Fna_Add()
         {
             var a = new Vector4_Fna(1, 2, 3, 4);

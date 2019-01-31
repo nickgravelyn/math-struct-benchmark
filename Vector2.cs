@@ -193,6 +193,19 @@ namespace math_struct_benchmark
         }
 
         [Benchmark]
+        public void Numerics_Vector2_Operator()
+        {
+            var a = new System.Numerics.Vector2(1, 2);
+            var b = new System.Numerics.Vector2(4, 5);
+
+            var iterations = Iterations;
+            while (iterations-- > 0)
+            {
+                a = a + b;
+            }
+        }
+
+        [Benchmark]
         public void Vector2_Fna_Add()
         {
             var a = new Vector2_Fna(1, 2);
