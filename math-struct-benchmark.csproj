@@ -5,6 +5,8 @@
     <PlatformTarget>AnyCPU</PlatformTarget>
     <TargetFrameworks>netcoreapp2.2;net46</TargetFrameworks>
     <RootNamespace>math_struct_benchmark</RootNamespace>
+    <DebugType>pdbonly</DebugType>
+    <DebugSymbols>true</DebugSymbols>
   </PropertyGroup>
 
   <ItemGroup>
