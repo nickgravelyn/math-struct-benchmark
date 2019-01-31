@@ -24,7 +24,7 @@ Job=Core  Runtime=Core
 
 ## Disassembly
 
-It's definitely related to the SIMD instructions RyuJit is emitting. This is what BenchmarkDotNet gives me from the disassembly:
+It's definitely related to the instructions RyuJit is emitting. This is what BenchmarkDotNet gives me from the disassembly:
 
 ```assembly
 ; StructBenchmark.Benchmarks.A_Add()
