@@ -4,21 +4,12 @@ Benchmarking techniques for math structs in C# in service of data for https://gi
 
 Run the benchmarks: `dotnet run -f netcoreapp2.2 -c Release -- -f "*"`
 
-## Takeaways (based on my results on my PC with these JITs/runtimes)
-
-- Approach A and B appear to have nearly identical results on .NET Framework and .NET Core with RyuJIT, but approach B seems to be generally better on Mono and Legacy JIT with approach A actually running slower than FNA on Mono.
-- AggressiveInlining seems to help only on Mono. It seems to help approach A only in Vector2 whereas approach B sees gains for all three vector sizes.
-- Across the board if raw performance is the goal then the `Add(ref, ref, out)` method is the right choice over the + operator.
-- Vector2 is consistently slower than both Vector3 and Vector4 when using anything but the `Add(ref, ref, out)` static helper. I haven't dug into this to figure out why but it is a particularly interesting thing to note.
-
-
 ## Results on my PC
 
 ``` ini
-
 BenchmarkDotNet=v0.11.3, OS=Windows 10.0.17134.523 (1803/April2018Update/Redstone4)
 Intel Core i5-6500 CPU 3.20GHz (Skylake), 1 CPU, 4 logical and 4 physical cores
-Frequency=3117188 Hz, Resolution=320.8020 ns, Timer=TSC
+Frequency=3117185 Hz, Resolution=320.8023 ns, Timer=TSC
 .NET Core SDK=2.2.103
   [Host]       : .NET Core 2.2.1 (CoreCLR 4.6.27207.03, CoreFX 4.6.27207.03), 64bit RyuJIT
   Clr          : .NET Framework 4.7.2 (CLR 4.0.30319.42000), 64bit RyuJIT-v4.7.3260.0
@@ -27,155 +18,118 @@ Frequency=3117188 Hz, Resolution=320.8020 ns, Timer=TSC
   LegacyJitX86 : .NET Framework 4.7.2 (CLR 4.0.30319.42000), 32bit LegacyJIT-v4.7.3260.0
   MonoX64      : Mono 5.18.0 (Visual Studio), 64bit
   MonoX86      : Mono 5.18.0 (Visual Studio), 32bit
-
-
 ```
-|                                Method |          Job |        Mean |      Error |     StdDev | Ratio |
-|-------------------------------------- |------------- |------------:|-----------:|-----------:|------:|
-|                  Vector2_Fna_Operator |          Clr |   922.97 ms |  6.8522 ms |  6.4096 ms |  1.00 |
-|                    Vector2_A_Operator |          Clr |   754.79 ms |  4.4768 ms |  4.1876 ms |  0.82 |
-| Vector2_A_AggressiveInlining_Operator |          Clr |   757.36 ms |  4.6108 ms |  4.3129 ms |  0.82 |
-|                    Vector2_B_Operator |          Clr |   756.02 ms |  4.6636 ms |  4.3624 ms |  0.82 |
-| Vector2_B_AggressiveInlining_Operator |          Clr |   757.65 ms |  3.3527 ms |  3.1361 ms |  0.82 |
-|                       Vector2_Fna_Add |          Clr |   920.30 ms |  5.1382 ms |  4.8062 ms |  1.00 |
-|                Vector2_Fna_Add_By_Ref |          Clr |   121.19 ms |  0.3074 ms |  0.2875 ms |  0.13 |
-|                                       |              |             |            |            |       |
-|                  Vector2_Fna_Operator |         Core |   921.82 ms |  5.5394 ms |  5.1816 ms |  1.00 |
-|                    Vector2_A_Operator |         Core |   757.07 ms |  4.4270 ms |  4.1411 ms |  0.82 |
-| Vector2_A_AggressiveInlining_Operator |         Core |   758.36 ms |  3.1376 ms |  2.7814 ms |  0.82 |
-|                    Vector2_B_Operator |         Core |   755.75 ms |  2.8961 ms |  2.7090 ms |  0.82 |
-| Vector2_B_AggressiveInlining_Operator |         Core |   759.12 ms |  3.1192 ms |  2.9177 ms |  0.82 |
-|                       Vector2_Fna_Add |         Core |   919.47 ms |  3.0816 ms |  2.4059 ms |  1.00 |
-|                Vector2_Fna_Add_By_Ref |         Core |   121.65 ms |  0.4578 ms |  0.4283 ms |  0.13 |
-|                                       |              |             |            |            |       |
-|                  Vector2_Fna_Operator | LegacyJitX64 |   918.90 ms |  3.4712 ms |  3.0771 ms |  1.00 |
-|                    Vector2_A_Operator | LegacyJitX64 |   756.59 ms |  6.7903 ms |  6.3516 ms |  0.82 |
-| Vector2_A_AggressiveInlining_Operator | LegacyJitX64 |   752.55 ms |  3.9338 ms |  3.6797 ms |  0.82 |
-|                    Vector2_B_Operator | LegacyJitX64 |   744.80 ms | 10.1570 ms |  9.5009 ms |  0.81 |
-| Vector2_B_AggressiveInlining_Operator | LegacyJitX64 |   747.66 ms |  9.8335 ms |  9.1982 ms |  0.81 |
-|                       Vector2_Fna_Add | LegacyJitX64 |   905.00 ms | 11.9911 ms | 11.2165 ms |  0.99 |
-|                Vector2_Fna_Add_By_Ref | LegacyJitX64 |   119.64 ms |  0.9557 ms |  0.8940 ms |  0.13 |
-|                                       |              |             |            |            |       |
-|                  Vector2_Fna_Operator | LegacyJitX86 |   499.46 ms |  2.3325 ms |  2.1818 ms |  1.00 |
-|                    Vector2_A_Operator | LegacyJitX86 |   274.83 ms |  2.1913 ms |  2.0497 ms |  0.55 |
-| Vector2_A_AggressiveInlining_Operator | LegacyJitX86 |   278.59 ms |  0.9401 ms |  0.8794 ms |  0.56 |
-|                    Vector2_B_Operator | LegacyJitX86 |   119.48 ms |  1.7245 ms |  1.6131 ms |  0.24 |
-| Vector2_B_AggressiveInlining_Operator | LegacyJitX86 |   120.21 ms |  0.2554 ms |  0.2389 ms |  0.24 |
-|                       Vector2_Fna_Add | LegacyJitX86 |   496.66 ms |  6.2307 ms |  5.8282 ms |  0.99 |
-|                Vector2_Fna_Add_By_Ref | LegacyJitX86 |    29.99 ms |  0.0932 ms |  0.0872 ms |  0.06 |
-|                                       |              |             |            |            |       |
-|                  Vector2_Fna_Operator |      MonoX64 | 1,578.75 ms | 21.6736 ms | 20.2735 ms |  1.00 |
-|                    Vector2_A_Operator |      MonoX64 | 1,650.72 ms | 29.2840 ms | 27.3923 ms |  1.05 |
-| Vector2_A_AggressiveInlining_Operator |      MonoX64 |   773.47 ms |  2.7739 ms |  2.5947 ms |  0.49 |
-|                    Vector2_B_Operator |      MonoX64 | 1,593.41 ms | 16.6858 ms | 15.6079 ms |  1.01 |
-| Vector2_B_AggressiveInlining_Operator |      MonoX64 |   722.83 ms |  1.9669 ms |  1.8398 ms |  0.46 |
-|                       Vector2_Fna_Add |      MonoX64 | 1,548.85 ms |  2.2292 ms |  1.8615 ms |  0.98 |
-|                Vector2_Fna_Add_By_Ref |      MonoX64 |   286.40 ms |  3.0321 ms |  2.8362 ms |  0.18 |
-|                                       |              |             |            |            |       |
-|                  Vector2_Fna_Operator |      MonoX86 |   764.67 ms | 11.2047 ms | 10.4809 ms |  1.00 |
-|                    Vector2_A_Operator |      MonoX86 |   963.88 ms |  4.5710 ms |  4.2757 ms |  1.26 |
-| Vector2_A_AggressiveInlining_Operator |      MonoX86 |   824.04 ms |  9.7282 ms |  9.0997 ms |  1.08 |
-|                    Vector2_B_Operator |      MonoX86 |   757.20 ms |  2.7807 ms |  2.6011 ms |  0.99 |
-| Vector2_B_AggressiveInlining_Operator |      MonoX86 |   643.64 ms |  4.7458 ms |  4.4392 ms |  0.84 |
-|                       Vector2_Fna_Add |      MonoX86 |   773.67 ms |  1.4911 ms |  1.3948 ms |  1.01 |
-|                Vector2_Fna_Add_By_Ref |      MonoX86 |   303.99 ms |  4.8474 ms |  4.5342 ms |  0.40 |
 
-|                                Method |          Job |        Mean |     Error |    StdDev | Ratio |
-|-------------------------------------- |------------- |------------:|----------:|----------:|------:|
-|                  Vector3_Fna_Operator |          Clr |   422.76 ms | 8.2761 ms | 9.8521 ms |  1.00 |
-|                    Vector3_A_Operator |          Clr |   117.91 ms | 0.8365 ms | 0.7825 ms |  0.28 |
-| Vector3_A_AggressiveInlining_Operator |          Clr |   120.52 ms | 0.2536 ms | 0.2372 ms |  0.28 |
-|                    Vector3_B_Operator |          Clr |   120.07 ms | 0.8027 ms | 0.7508 ms |  0.28 |
-| Vector3_B_AggressiveInlining_Operator |          Clr |   120.59 ms | 0.5126 ms | 0.4795 ms |  0.28 |
-|                       Vector3_Fna_Add |          Clr |   421.95 ms | 2.2950 ms | 2.1467 ms |  1.00 |
-|                Vector3_Fna_Add_By_Ref |          Clr |   120.45 ms | 0.7503 ms | 0.7019 ms |  0.28 |
-|                                       |              |             |           |           |       |
-|                  Vector3_Fna_Operator |         Core |   422.90 ms | 3.2206 ms | 3.0125 ms |  1.00 |
-|                    Vector3_A_Operator |         Core |   120.06 ms | 1.3262 ms | 1.2405 ms |  0.28 |
-| Vector3_A_AggressiveInlining_Operator |         Core |   120.07 ms | 0.8517 ms | 0.7967 ms |  0.28 |
-|                    Vector3_B_Operator |         Core |   120.58 ms | 0.7830 ms | 0.7324 ms |  0.29 |
-| Vector3_B_AggressiveInlining_Operator |         Core |   120.11 ms | 0.6044 ms | 0.5653 ms |  0.28 |
-|                       Vector3_Fna_Add |         Core |   421.84 ms | 2.8051 ms | 2.6239 ms |  1.00 |
-|                Vector3_Fna_Add_By_Ref |         Core |   120.22 ms | 0.3693 ms | 0.3273 ms |  0.28 |
-|                                       |              |             |           |           |       |
-|                  Vector3_Fna_Operator | LegacyJitX64 |   425.97 ms | 2.3481 ms | 2.1964 ms |  1.00 |
-|                    Vector3_A_Operator | LegacyJitX64 |   120.19 ms | 0.4971 ms | 0.4650 ms |  0.28 |
-| Vector3_A_AggressiveInlining_Operator | LegacyJitX64 |   120.14 ms | 1.0104 ms | 0.9451 ms |  0.28 |
-|                    Vector3_B_Operator | LegacyJitX64 |   120.27 ms | 0.4283 ms | 0.4006 ms |  0.28 |
-| Vector3_B_AggressiveInlining_Operator | LegacyJitX64 |   120.44 ms | 0.4381 ms | 0.4098 ms |  0.28 |
-|                       Vector3_Fna_Add | LegacyJitX64 |   424.29 ms | 3.7212 ms | 3.4808 ms |  1.00 |
-|                Vector3_Fna_Add_By_Ref | LegacyJitX64 |   120.03 ms | 0.8946 ms | 0.8368 ms |  0.28 |
-|                                       |              |             |           |           |       |
-|                  Vector3_Fna_Operator | LegacyJitX86 |   460.96 ms | 3.2605 ms | 2.8903 ms |  1.00 |
-|                    Vector3_A_Operator | LegacyJitX86 |   302.77 ms | 3.0089 ms | 2.8145 ms |  0.66 |
-| Vector3_A_AggressiveInlining_Operator | LegacyJitX86 |   301.57 ms | 2.3400 ms | 2.1889 ms |  0.65 |
-|                    Vector3_B_Operator | LegacyJitX86 |   150.26 ms | 0.8531 ms | 0.7124 ms |  0.33 |
-| Vector3_B_AggressiveInlining_Operator | LegacyJitX86 |   150.53 ms | 0.8667 ms | 0.8107 ms |  0.33 |
-|                       Vector3_Fna_Add | LegacyJitX86 |   462.61 ms | 3.6289 ms | 3.3944 ms |  1.00 |
-|                Vector3_Fna_Add_By_Ref | LegacyJitX86 |    30.04 ms | 0.2847 ms | 0.2663 ms |  0.07 |
-|                                       |              |             |           |           |       |
-|                  Vector3_Fna_Operator |      MonoX64 | 1,357.53 ms | 2.8149 ms | 2.6331 ms |  1.00 |
-|                    Vector3_A_Operator |      MonoX64 | 1,529.30 ms | 3.6631 ms | 3.4265 ms |  1.13 |
-| Vector3_A_AggressiveInlining_Operator |      MonoX64 | 1,526.02 ms | 2.7833 ms | 2.6035 ms |  1.12 |
-|                    Vector3_B_Operator |      MonoX64 | 1,296.14 ms | 3.7933 ms | 3.5482 ms |  0.95 |
-| Vector3_B_AggressiveInlining_Operator |      MonoX64 |   720.65 ms | 5.1098 ms | 4.7797 ms |  0.53 |
-|                       Vector3_Fna_Add |      MonoX64 | 1,361.11 ms | 4.4898 ms | 4.1997 ms |  1.00 |
-|                Vector3_Fna_Add_By_Ref |      MonoX64 |   302.14 ms | 0.8183 ms | 0.7654 ms |  0.22 |
-|                                       |              |             |           |           |       |
-|                  Vector3_Fna_Operator |      MonoX86 |   927.90 ms | 3.5087 ms | 3.2820 ms |  1.00 |
-|                    Vector3_A_Operator |      MonoX86 | 1,410.57 ms | 5.4731 ms | 5.1195 ms |  1.52 |
-| Vector3_A_AggressiveInlining_Operator |      MonoX86 | 1,420.69 ms | 4.7781 ms | 4.2357 ms |  1.53 |
-|                    Vector3_B_Operator |      MonoX86 |   942.67 ms | 3.2693 ms | 3.0581 ms |  1.02 |
-| Vector3_B_AggressiveInlining_Operator |      MonoX86 |   646.76 ms | 4.5323 ms | 4.2395 ms |  0.70 |
-|                       Vector3_Fna_Add |      MonoX86 |   923.71 ms | 2.2491 ms | 2.1038 ms |  1.00 |
-|                Vector3_Fna_Add_By_Ref |      MonoX86 |   462.57 ms | 1.9358 ms | 1.8107 ms |  0.50 |
+|                    Method |       Jit | Platform | Runtime |        Mean |     Error |    StdDev | Ratio |
+|-------------------------- |---------- |--------- |-------- |------------:|----------:|----------:|------:|
+|      Vector2_Fna_Operator |    RyuJit |      X64 |     Clr |   922.14 ms | 4.1927 ms | 3.9218 ms |  1.00 |
+|    Vector2_Fna_Add_By_Ref |    RyuJit |      X64 |     Clr |   121.48 ms | 0.3504 ms | 0.3278 ms |  0.13 |
+|        Vector2_B_Operator |    RyuJit |      X64 |     Clr |   757.82 ms | 3.9541 ms | 3.6987 ms |  0.82 |
+| Numerics_Vector2_Operator |    RyuJit |      X64 |     Clr |   285.92 ms | 1.5591 ms | 1.4584 ms |  0.31 |
+|     Separate_Local_Floats |    RyuJit |      X64 |     Clr |   121.37 ms | 0.5239 ms | 0.4645 ms |  0.13 |
+|                           |           |          |         |             |           |           |       |
+|      Vector2_Fna_Operator |    RyuJit |      X64 |    Core |   922.29 ms | 3.0219 ms | 2.8266 ms |  1.00 |
+|    Vector2_Fna_Add_By_Ref |    RyuJit |      X64 |    Core |   121.50 ms | 0.4503 ms | 0.4212 ms |  0.13 |
+|        Vector2_B_Operator |    RyuJit |      X64 |    Core |   759.98 ms | 2.3472 ms | 2.0807 ms |  0.82 |
+| Numerics_Vector2_Operator |    RyuJit |      X64 |    Core |   285.03 ms | 1.3802 ms | 1.2235 ms |  0.31 |
+|     Separate_Local_Floats |    RyuJit |      X64 |    Core |   120.31 ms | 1.7522 ms | 1.6390 ms |  0.13 |
+|                           |           |          |         |             |           |           |       |
+|      Vector2_Fna_Operator | LegacyJit |      X64 |     Clr |   922.80 ms | 2.1350 ms | 1.9971 ms |  1.00 |
+|    Vector2_Fna_Add_By_Ref | LegacyJit |      X64 |     Clr |   120.73 ms | 1.3679 ms | 1.2795 ms |  0.13 |
+|        Vector2_B_Operator | LegacyJit |      X64 |     Clr |   757.90 ms | 1.1626 ms | 1.0307 ms |  0.82 |
+| Numerics_Vector2_Operator | LegacyJit |      X64 |     Clr |   285.48 ms | 1.3164 ms | 1.2313 ms |  0.31 |
+|     Separate_Local_Floats | LegacyJit |      X64 |     Clr |   121.39 ms | 1.0034 ms | 0.8895 ms |  0.13 |
+|                           |           |          |         |             |           |           |       |
+|      Vector2_Fna_Operator | LegacyJit |      X86 |     Clr |   488.08 ms | 4.8625 ms | 4.5484 ms |  1.00 |
+|    Vector2_Fna_Add_By_Ref | LegacyJit |      X86 |     Clr |    30.15 ms | 0.4445 ms | 0.4158 ms |  0.06 |
+|        Vector2_B_Operator | LegacyJit |      X86 |     Clr |    97.60 ms | 1.5222 ms | 1.4238 ms |  0.20 |
+| Numerics_Vector2_Operator | LegacyJit |      X86 |     Clr |   271.69 ms | 1.3041 ms | 1.2198 ms |  0.56 |
+|     Separate_Local_Floats | LegacyJit |      X86 |     Clr |    30.11 ms | 0.1377 ms | 0.1150 ms |  0.06 |
+|                           |           |          |         |             |           |           |       |
+|      Vector2_Fna_Operator |    RyuJit |      X64 | MonoX64 | 1,592.60 ms | 3.7630 ms | 3.5199 ms |  1.00 |
+|    Vector2_Fna_Add_By_Ref |    RyuJit |      X64 | MonoX64 |   289.58 ms | 3.3579 ms | 3.1409 ms |  0.18 |
+|        Vector2_B_Operator |    RyuJit |      X64 | MonoX64 |   724.50 ms | 3.9091 ms | 3.6565 ms |  0.45 |
+| Numerics_Vector2_Operator |    RyuJit |      X64 | MonoX64 |   758.91 ms | 2.3680 ms | 1.8488 ms |  0.48 |
+|     Separate_Local_Floats |    RyuJit |      X64 | MonoX64 |   271.56 ms | 1.7974 ms | 1.6813 ms |  0.17 |
+|                           |           |          |         |             |           |           |       |
+|      Vector2_Fna_Operator |    RyuJit |      X64 | MonoX86 |   778.76 ms | 2.7323 ms | 2.5558 ms |  1.00 |
+|    Vector2_Fna_Add_By_Ref |    RyuJit |      X64 | MonoX86 |   426.49 ms | 2.4002 ms | 2.2452 ms |  0.55 |
+|        Vector2_B_Operator |    RyuJit |      X64 | MonoX86 |   634.28 ms | 1.4864 ms | 1.3904 ms |  0.81 |
+| Numerics_Vector2_Operator |    RyuJit |      X64 | MonoX86 |   838.69 ms | 6.9621 ms | 6.1717 ms |  1.08 |
+|     Separate_Local_Floats |    RyuJit |      X64 | MonoX86 |   266.28 ms | 2.3754 ms | 2.2219 ms |  0.34 |
 
-|                                Method |          Job |        Mean |      Error |     StdDev | Ratio |
-|-------------------------------------- |------------- |------------:|-----------:|-----------:|------:|
-|                  Vector4_Fna_Operator |          Clr |   420.44 ms |  2.0096 ms |  1.7815 ms |  1.00 |
-|                    Vector4_A_Operator |          Clr |   120.29 ms |  0.3692 ms |  0.3453 ms |  0.29 |
-| Vector4_A_AggressiveInlining_Operator |          Clr |   117.03 ms |  0.2301 ms |  0.1922 ms |  0.28 |
-|                    Vector4_B_Operator |          Clr |   120.29 ms |  0.3423 ms |  0.3202 ms |  0.29 |
-| Vector4_B_AggressiveInlining_Operator |          Clr |   117.90 ms |  1.1970 ms |  1.1197 ms |  0.28 |
-|                       Vector4_Fna_Add |          Clr |   422.25 ms |  1.3159 ms |  1.2309 ms |  1.00 |
-|                Vector4_Fna_Add_By_Ref |          Clr |   119.31 ms |  1.9924 ms |  1.8637 ms |  0.28 |
-|                                       |              |             |            |            |       |
-|                  Vector4_Fna_Operator |         Core |   420.63 ms |  1.8105 ms |  1.6936 ms |  1.00 |
-|                    Vector4_A_Operator |         Core |   118.72 ms |  0.2299 ms |  0.2038 ms |  0.28 |
-| Vector4_A_AggressiveInlining_Operator |         Core |   120.30 ms |  0.4126 ms |  0.3859 ms |  0.29 |
-|                    Vector4_B_Operator |         Core |   117.16 ms |  0.3781 ms |  0.3352 ms |  0.28 |
-| Vector4_B_AggressiveInlining_Operator |         Core |   120.17 ms |  0.3828 ms |  0.3581 ms |  0.29 |
-|                       Vector4_Fna_Add |         Core |   416.64 ms |  1.2562 ms |  1.1751 ms |  0.99 |
-|                Vector4_Fna_Add_By_Ref |         Core |   120.08 ms |  0.3971 ms |  0.3715 ms |  0.29 |
-|                                       |              |             |            |            |       |
-|                  Vector4_Fna_Operator | LegacyJitX64 |   412.25 ms |  2.5999 ms |  2.4320 ms |  1.00 |
-|                    Vector4_A_Operator | LegacyJitX64 |   120.13 ms |  0.4981 ms |  0.4659 ms |  0.29 |
-| Vector4_A_AggressiveInlining_Operator | LegacyJitX64 |   121.43 ms |  0.2010 ms |  0.1880 ms |  0.29 |
-|                    Vector4_B_Operator | LegacyJitX64 |   120.13 ms |  0.2502 ms |  0.2218 ms |  0.29 |
-| Vector4_B_AggressiveInlining_Operator | LegacyJitX64 |   120.18 ms |  0.4588 ms |  0.4291 ms |  0.29 |
-|                       Vector4_Fna_Add | LegacyJitX64 |   421.83 ms |  3.6066 ms |  3.3736 ms |  1.02 |
-|                Vector4_Fna_Add_By_Ref | LegacyJitX64 |   120.17 ms |  0.2819 ms |  0.2499 ms |  0.29 |
-|                                       |              |             |            |            |       |
-|                  Vector4_Fna_Operator | LegacyJitX86 |   481.58 ms |  1.5000 ms |  1.3297 ms |  1.00 |
-|                    Vector4_A_Operator | LegacyJitX86 |   452.77 ms |  2.2573 ms |  2.1115 ms |  0.94 |
-| Vector4_A_AggressiveInlining_Operator | LegacyJitX86 |   441.68 ms |  1.4232 ms |  1.1884 ms |  0.92 |
-|                    Vector4_B_Operator | LegacyJitX86 |   150.19 ms |  0.9830 ms |  0.9195 ms |  0.31 |
-| Vector4_B_AggressiveInlining_Operator | LegacyJitX86 |   150.30 ms |  0.4183 ms |  0.3913 ms |  0.31 |
-|                       Vector4_Fna_Add | LegacyJitX86 |   478.90 ms |  5.8638 ms |  5.4850 ms |  0.99 |
-|                Vector4_Fna_Add_By_Ref | LegacyJitX86 |    29.94 ms |  0.3220 ms |  0.3012 ms |  0.06 |
-|                                       |              |             |            |            |       |
-|                  Vector4_Fna_Operator |      MonoX64 | 1,579.35 ms | 23.9388 ms | 22.3924 ms |  1.00 |
-|                    Vector4_A_Operator |      MonoX64 | 1,811.93 ms |  3.9435 ms |  3.6888 ms |  1.15 |
-| Vector4_A_AggressiveInlining_Operator |      MonoX64 | 1,773.79 ms |  5.8764 ms |  5.2093 ms |  1.12 |
-|                    Vector4_B_Operator |      MonoX64 | 1,441.87 ms |  6.7154 ms |  6.2816 ms |  0.91 |
-| Vector4_B_AggressiveInlining_Operator |      MonoX64 |   908.96 ms |  2.5965 ms |  2.4288 ms |  0.58 |
-|                       Vector4_Fna_Add |      MonoX64 | 1,603.01 ms |  3.7647 ms |  3.5215 ms |  1.02 |
-|                Vector4_Fna_Add_By_Ref |      MonoX64 |   329.44 ms |  1.0622 ms |  0.9936 ms |  0.21 |
-|                                       |              |             |            |            |       |
-|                  Vector4_Fna_Operator |      MonoX86 | 1,132.66 ms |  3.4291 ms |  3.0398 ms |  1.00 |
-|                    Vector4_A_Operator |      MonoX86 | 1,745.40 ms | 34.8439 ms | 61.0263 ms |  1.55 |
-| Vector4_A_AggressiveInlining_Operator |      MonoX86 | 1,693.97 ms |  5.7938 ms |  4.5234 ms |  1.50 |
-|                    Vector4_B_Operator |      MonoX86 | 1,168.97 ms |  4.3263 ms |  4.0468 ms |  1.03 |
-| Vector4_B_AggressiveInlining_Operator |      MonoX86 |   847.96 ms |  3.5101 ms |  3.2833 ms |  0.75 |
-|                       Vector4_Fna_Add |      MonoX86 | 1,122.44 ms |  4.5601 ms |  4.2655 ms |  0.99 |
-|                Vector4_Fna_Add_By_Ref |      MonoX86 |   451.18 ms |  1.9223 ms |  1.7981 ms |  0.40 |
+|                    Method |       Jit | Platform | Runtime |        Mean |      Error |     StdDev | Ratio |
+|-------------------------- |---------- |--------- |-------- |------------:|-----------:|-----------:|------:|
+|      Vector3_Fna_Operator |    RyuJit |      X64 |     Clr |   427.06 ms |  1.8953 ms |  1.7728 ms |  1.00 |
+|    Vector3_Fna_Add_By_Ref |    RyuJit |      X64 |     Clr |   120.61 ms |  0.7234 ms |  0.6766 ms |  0.28 |
+|        Vector3_B_Operator |    RyuJit |      X64 |     Clr |   120.68 ms |  0.8109 ms |  0.7585 ms |  0.28 |
+| Numerics_Vector3_Operator |    RyuJit |      X64 |     Clr |   120.15 ms |  1.1919 ms |  1.1149 ms |  0.28 |
+|     Separate_Local_Floats |    RyuJit |      X64 |     Clr |   120.72 ms |  0.3689 ms |  0.3270 ms |  0.28 |
+|                           |           |          |         |             |            |            |       |
+|      Vector3_Fna_Operator |    RyuJit |      X64 |    Core |   421.20 ms |  4.3005 ms |  3.5911 ms |  1.00 |
+|    Vector3_Fna_Add_By_Ref |    RyuJit |      X64 |    Core |   121.18 ms |  0.5391 ms |  0.5043 ms |  0.29 |
+|        Vector3_B_Operator |    RyuJit |      X64 |    Core |   120.72 ms |  1.2305 ms |  1.1510 ms |  0.29 |
+| Numerics_Vector3_Operator |    RyuJit |      X64 |    Core |   121.52 ms |  0.3093 ms |  0.2742 ms |  0.29 |
+|     Separate_Local_Floats |    RyuJit |      X64 |    Core |   121.56 ms |  0.6858 ms |  0.6415 ms |  0.29 |
+|                           |           |          |         |             |            |            |       |
+|      Vector3_Fna_Operator | LegacyJit |      X64 |     Clr |   429.99 ms |  1.3993 ms |  1.3089 ms |  1.00 |
+|    Vector3_Fna_Add_By_Ref | LegacyJit |      X64 |     Clr |   121.31 ms |  1.1790 ms |  1.1028 ms |  0.28 |
+|        Vector3_B_Operator | LegacyJit |      X64 |     Clr |   120.97 ms |  0.6729 ms |  0.6294 ms |  0.28 |
+| Numerics_Vector3_Operator | LegacyJit |      X64 |     Clr |   121.43 ms |  1.0689 ms |  0.9999 ms |  0.28 |
+|     Separate_Local_Floats | LegacyJit |      X64 |     Clr |   121.31 ms |  0.4595 ms |  0.4299 ms |  0.28 |
+|                           |           |          |         |             |            |            |       |
+|      Vector3_Fna_Operator | LegacyJit |      X86 |     Clr |   477.90 ms |  2.0010 ms |  1.8717 ms |  1.00 |
+|    Vector3_Fna_Add_By_Ref | LegacyJit |      X86 |     Clr |    30.31 ms |  0.0789 ms |  0.0738 ms |  0.06 |
+|        Vector3_B_Operator | LegacyJit |      X86 |     Clr |   140.53 ms |  0.7391 ms |  0.6913 ms |  0.29 |
+| Numerics_Vector3_Operator | LegacyJit |      X86 |     Clr |   278.81 ms |  4.7911 ms |  4.4816 ms |  0.58 |
+|     Separate_Local_Floats | LegacyJit |      X86 |     Clr |    30.31 ms |  0.2358 ms |  0.2206 ms |  0.06 |
+|                           |           |          |         |             |            |            |       |
+|      Vector3_Fna_Operator |    RyuJit |      X64 | MonoX64 | 1,368.46 ms |  8.8560 ms |  8.2839 ms |  1.00 |
+|    Vector3_Fna_Add_By_Ref |    RyuJit |      X64 | MonoX64 |   304.70 ms |  0.7046 ms |  0.6591 ms |  0.22 |
+|        Vector3_B_Operator |    RyuJit |      X64 | MonoX64 |   727.11 ms |  5.6541 ms |  5.2889 ms |  0.53 |
+| Numerics_Vector3_Operator |    RyuJit |      X64 | MonoX64 | 1,535.94 ms |  4.5348 ms |  4.2418 ms |  1.12 |
+|     Separate_Local_Floats |    RyuJit |      X64 | MonoX64 |   277.66 ms |  3.4412 ms |  3.2189 ms |  0.20 |
+|                           |           |          |         |             |            |            |       |
+|      Vector3_Fna_Operator |    RyuJit |      X64 | MonoX86 |   929.81 ms |  3.0898 ms |  2.8902 ms |  1.00 |
+|    Vector3_Fna_Add_By_Ref |    RyuJit |      X64 | MonoX86 |   473.07 ms |  1.4609 ms |  1.3665 ms |  0.51 |
+|        Vector3_B_Operator |    RyuJit |      X64 | MonoX86 |   650.97 ms |  6.4649 ms |  6.0473 ms |  0.70 |
+| Numerics_Vector3_Operator |    RyuJit |      X64 | MonoX86 | 1,398.85 ms | 20.5702 ms | 19.2414 ms |  1.50 |
+|     Separate_Local_Floats |    RyuJit |      X64 | MonoX86 |   294.63 ms |  1.8721 ms |  1.7512 ms |  0.32 |
+
+|                    Method |       Jit | Platform | Runtime |        Mean |     Error |    StdDev | Ratio |
+|-------------------------- |---------- |--------- |-------- |------------:|----------:|----------:|------:|
+|      Vector4_Fna_Operator |    RyuJit |      X64 |     Clr |   415.46 ms | 3.9390 ms | 3.6845 ms |  1.00 |
+|    Vector4_Fna_Add_By_Ref |    RyuJit |      X64 |     Clr |   120.55 ms | 0.3185 ms | 0.2979 ms |  0.29 |
+|        Vector4_B_Operator |    RyuJit |      X64 |     Clr |   120.43 ms | 0.5366 ms | 0.5019 ms |  0.29 |
+| Numerics_Vector4_Operator |    RyuJit |      X64 |     Clr |   120.35 ms | 0.4287 ms | 0.4010 ms |  0.29 |
+|     Separate_Local_Floats |    RyuJit |      X64 |     Clr |   120.47 ms | 0.4617 ms | 0.4319 ms |  0.29 |
+|                           |           |          |         |             |           |           |       |
+|      Vector4_Fna_Operator |    RyuJit |      X64 |    Core |   421.71 ms | 2.8103 ms | 2.6288 ms |  1.00 |
+|    Vector4_Fna_Add_By_Ref |    RyuJit |      X64 |    Core |   120.50 ms | 0.4628 ms | 0.4329 ms |  0.29 |
+|        Vector4_B_Operator |    RyuJit |      X64 |    Core |   120.43 ms | 0.5915 ms | 0.5533 ms |  0.29 |
+| Numerics_Vector4_Operator |    RyuJit |      X64 |    Core |   120.42 ms | 0.6265 ms | 0.5860 ms |  0.29 |
+|     Separate_Local_Floats |    RyuJit |      X64 |    Core |   120.67 ms | 1.0563 ms | 0.9880 ms |  0.29 |
+|                           |           |          |         |             |           |           |       |
+|      Vector4_Fna_Operator | LegacyJit |      X64 |     Clr |   423.82 ms | 1.8137 ms | 1.6966 ms |  1.00 |
+|    Vector4_Fna_Add_By_Ref | LegacyJit |      X64 |     Clr |   118.66 ms | 1.0212 ms | 0.9553 ms |  0.28 |
+|        Vector4_B_Operator | LegacyJit |      X64 |     Clr |   120.64 ms | 0.4436 ms | 0.4150 ms |  0.28 |
+| Numerics_Vector4_Operator | LegacyJit |      X64 |     Clr |   121.20 ms | 0.6131 ms | 0.5735 ms |  0.29 |
+|     Separate_Local_Floats | LegacyJit |      X64 |     Clr |   120.53 ms | 0.9324 ms | 0.8721 ms |  0.28 |
+|                           |           |          |         |             |           |           |       |
+|      Vector4_Fna_Operator | LegacyJit |      X86 |     Clr |   447.24 ms | 2.8635 ms | 2.5385 ms |  1.00 |
+|    Vector4_Fna_Add_By_Ref | LegacyJit |      X86 |     Clr |    30.16 ms | 0.0863 ms | 0.0807 ms |  0.07 |
+|        Vector4_B_Operator | LegacyJit |      X86 |     Clr |   183.99 ms | 0.4588 ms | 0.3582 ms |  0.41 |
+| Numerics_Vector4_Operator | LegacyJit |      X86 |     Clr |   362.83 ms | 2.1249 ms | 1.9877 ms |  0.81 |
+|     Separate_Local_Floats | LegacyJit |      X86 |     Clr |    30.06 ms | 0.3850 ms | 0.3601 ms |  0.07 |
+|                           |           |          |         |             |           |           |       |
+|      Vector4_Fna_Operator |    RyuJit |      X64 | MonoX64 | 1,604.73 ms | 4.1507 ms | 3.8826 ms |  1.00 |
+|    Vector4_Fna_Add_By_Ref |    RyuJit |      X64 | MonoX64 |   325.68 ms | 3.6948 ms | 3.4561 ms |  0.20 |
+|        Vector4_B_Operator |    RyuJit |      X64 | MonoX64 |   928.08 ms | 5.1081 ms | 4.7781 ms |  0.58 |
+| Numerics_Vector4_Operator |    RyuJit |      X64 | MonoX64 |   265.10 ms | 0.9620 ms | 0.8033 ms |  0.17 |
+|     Separate_Local_Floats |    RyuJit |      X64 | MonoX64 |   303.63 ms | 1.5118 ms | 1.4142 ms |  0.19 |
+|                           |           |          |         |             |           |           |       |
+|      Vector4_Fna_Operator |    RyuJit |      X64 | MonoX86 | 1,112.42 ms | 2.2699 ms | 1.8955 ms |  1.00 |
+|    Vector4_Fna_Add_By_Ref |    RyuJit |      X64 | MonoX86 |   452.32 ms | 3.7417 ms | 3.5000 ms |  0.41 |
+|        Vector4_B_Operator |    RyuJit |      X64 | MonoX86 |   849.67 ms | 2.7341 ms | 2.5575 ms |  0.76 |
+| Numerics_Vector4_Operator |    RyuJit |      X64 | MonoX86 |   270.69 ms | 0.7299 ms | 0.6827 ms |  0.24 |
+|     Separate_Local_Floats |    RyuJit |      X64 | MonoX86 |   279.46 ms | 1.2819 ms | 1.1991 ms |  0.25 |
